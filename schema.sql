@@ -80,3 +80,12 @@ FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n' 
 IGNORE 1 ROWS;
+
+-- 2 columns of district_id 69 is set to '?' -> change it with NULL
+-- SET SQL_SAFE_UPDATES =0;
+SELECT * FROM district WHERE district_id = 69;
+UPDATE district 
+SET unemployment_rate_95 = NULL,
+    num_crimes_95 = NULL
+WHERE district_id = 69;
+-- SET SQL_SAFE_UPDATES=1;
