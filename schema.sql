@@ -92,3 +92,4 @@ WHERE district_id = 69;
 
 ALTER TABLE trans MODIFY `date` DATE;
 ALTER TABLE loan MODIFY `date` DATE;
+ALTER TABLE account MODIFY `date` DATE;
