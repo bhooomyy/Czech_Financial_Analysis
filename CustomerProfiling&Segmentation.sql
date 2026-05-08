@@ -10,3 +10,5 @@ SELECT frequency,COUNT(account_id) as acc_cnt FROM account GROUP BY frequency OR
 -- How many accounts were opened each year? (parse date YYMMDD format)
 SELECT YEAR(date),COUNT(account_id) as acc_cnt FROM account GROUP BY YEAR(date);
 
+-- List all clients with their birth year extracted from birth_number
+select client_id,year(dateofbirth) from client;
