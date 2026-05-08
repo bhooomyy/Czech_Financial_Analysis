@@ -56,3 +56,27 @@ FIELDS TERMINATED BY ';'
 OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n' 
 IGNORE 1 ROWS;
+
+CREATE TABLE district(
+    district_id INT,
+    district_name VARCHAR(50),
+    region VARCHAR(50),
+    `population` INT,
+    num_municipalities_lt_499 INT,
+    num_municipalities_500_1999 INT,
+    num_municipalities_2000_9999 INT,
+    num_municipalities_gt_10000 INT,
+    num_cities INT,
+    ratio_urban_inhabitants FLOAT,
+    avg_salary INT,
+    unemployment_rate_95 FLOAT,
+    unemployment_rate_96 FLOAT,
+    num_entrepreneurs_per_1000 INT,
+    num_crimes_95 INT,
+    num_crimes_96 INT);
+LOAD DATA INFILE '/Users/bhoomi/Downloads/BerkaCzechFinancialDataset/district.csv'
+INTO TABLE distict
+FIELDS TERMINATED BY ';' 
+OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n' 
+IGNORE 1 ROWS;
