@@ -89,3 +89,6 @@ SET unemployment_rate_95 = NULL,
     num_crimes_95 = NULL
 WHERE district_id = 69;
 -- SET SQL_SAFE_UPDATES=1;
+
+ALTER TABLE trans MODIFY `date` DATE;
+ALTER TABLE loan MODIFY `date` DATE;
