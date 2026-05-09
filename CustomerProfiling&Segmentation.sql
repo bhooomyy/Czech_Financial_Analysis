@@ -99,4 +99,13 @@ SELECT
     WHERE type = 'OWNER' 
     GROUP BY client_id 
     ORDER BY cnt DESC; -- all client has at most 1 account with type OWNER
+
+-- Which district has the highest ratio of female clients to total clients?
+SELECT 
+	district_id,
+    CONCAT(ROUND(SUM(gender='F')*100.0/COUNT(*),2),'%') as female_ratio
+    FROM client
+    GROUP BY district_id
+    ORDER BY SUM(gender='F')/COUNT(*) DESC
+    LIMIT 1;
 -- 
