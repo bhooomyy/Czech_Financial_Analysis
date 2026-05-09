@@ -12,3 +12,10 @@ SELECT YEAR(date),COUNT(account_id) as acc_cnt FROM account GROUP BY YEAR(date);
 
 -- List all clients with their birth year extracted from birth_number
 select client_id,year(dateofbirth) from client;
+
+-- Join client + disposition + account: list every client with their account_id and role (OWNER vs DISPONENT)
+SELECT c.client_id,a.account_id,a.date,d.type 
+FROM client c 
+INNER JOIN disp d ON c.client_id=d.client_id
+INNER JOIN account a ON a.account_id=d.account_id
+ORDER BY c.client_id;
