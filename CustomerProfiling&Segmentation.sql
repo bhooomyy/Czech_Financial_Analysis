@@ -128,3 +128,27 @@ WITH TOP10 as (SELECT
     SELECT * FROM TOP10
     UNION ALL
     SELECT * FROM BOTTOM10;
+
+
+-- For each district, calculate the % of accounts opened in the first half vs second half of the dataset's date range (CTE + window)
+WITH first_half AS(SELECT 
+	district_id, 
+    COUNT(DISTINCT account_id) AS first_half_client_cnt
+    FROM account 
+    WHERE date<(SELECT ADDDATE(min(date),DATEDIFF(MAX(date),MIN(date))/2) FROM account)
+    GROUP BY district_id),
+    second_half as(SELECT 
+    district_id, 
+    COUNT(DISTINCT account_id) AS second_half_client_cnt
+    FROM account 
+    WHERE date>(SELECT ADDDATE(min(date),DATEDIFF(MAX(date),MIN(date))/2) FROM account)
+    GROUP BY district_id)
+SELECT 
+	f.district_id,
+	first_half_client_cnt,
+    second_half_client_cnt,
+    CONCAT(ROUND(first_half_client_cnt*100.0/(SELECT COUNT(*) FROM account),2),'%') as first_half_client_percentage,
+    CONCAT(ROUND(second_half_client_cnt*100.0/(SELECT COUNT(*) FROM account),2),'%') as second_half_client_percentage
+    FROM first_half f join second_half s ON f.district_id=s.district_id
+    ORDER BY f.district_id;
+-- 
