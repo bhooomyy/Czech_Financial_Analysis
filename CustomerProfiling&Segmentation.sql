@@ -82,4 +82,21 @@ SELECT CASE
     FROM A
     GROUP BY bins
     ORDER BY bins;
+
+-- Find clients who own MORE than one account (using disposition type = OWNER)
+SELECT 
+	client_id, 
+    COUNT(account_id) AS cnt 
+	FROM disp 
+	WHERE type = 'OWNER' 
+	GROUP BY client_id 
+	HAVING COUNT(account_id) > 1;
+
+SELECT 
+    client_id, 
+    COUNT(account_id) AS cnt 
+    FROM disp 
+    WHERE type = 'OWNER' 
+    GROUP BY client_id 
+    ORDER BY cnt DESC; -- all client has at most 1 account with type OWNER
 -- 
