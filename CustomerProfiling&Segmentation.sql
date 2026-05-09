@@ -66,4 +66,20 @@ SELECT
     FROM client
     GROUP BY gender,district_id
     ORDER BY district_id;
+
+-- Calculate each client's age as of 1998-12-31. Bin into age groups: <30, 30-45, 45-60, 60+
+WITH A as (
+	SELECT 
+    TIMESTAMPDIFF(YEAR,dateofbirth,'1998-12-31') AS age 
+    FROM client)
+SELECT CASE 
+	WHEN age<30 THEN "<30" 
+    WHEN age>=30 AND age<45 THEN "30-45"
+    WHEN age>=45 AND age<60 THEN "45-60"
+    ELSE "60+"
+    END as bins,
+    COUNT(*) as cnt
+    FROM A
+    GROUP BY bins
+    ORDER BY bins;
 -- 
