@@ -57,4 +57,13 @@ SELECT account_id
 	FROM disp
     GROUP BY account_id
     HAVING COUNT(type)=2;
+
+-- Count male vs female clients per district
+SELECT 
+	district_id,
+	gender,
+	CONCAT(ROUND(COUNT(client_id)*100.0/(SELECT COUNT(*) FROM client),2),'%') as percentage_clients_by_gender
+    FROM client
+    GROUP BY gender,district_id
+    ORDER BY district_id;
 -- 
