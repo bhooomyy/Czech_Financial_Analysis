@@ -1,17 +1,37 @@
 -- Count total number of clients in the bank
-SELECT COUNT(DISTINCT client_id) FROM client;
+SELECT 
+    COUNT(DISTINCT client_id) 
+    FROM client;
 
 -- Count clients per district — which district has the most clients?
-SELECT d.district_id,d.district_name,COUNT(c.client_id) as client_cnt FROM district d INNER JOIN client c ON d.district_id=c.district_id GROUP BY d.district_id,d.district_name ORDER BY client_cnt DESC;
+SELECT 
+    d.district_id,
+    d.district_name,
+    COUNT(c.client_id) as client_cnt 
+    FROM district d INNER JOIN client c ON d.district_id=c.district_id 
+    GROUP BY d.district_id,d.district_name 
+    ORDER BY client_cnt DESC;
 
 -- How many accounts exist per frequency type (POPLATEK MESICNE etc)?
-SELECT frequency,COUNT(account_id) as acc_cnt FROM account GROUP BY frequency ORDER BY acc_cnt DESC;
+SELECT 
+    frequency,
+    COUNT(account_id) as acc_cnt 
+    FROM account 
+    GROUP BY frequency 
+    ORDER BY acc_cnt DESC;
 
 -- How many accounts were opened each year? (parse date YYMMDD format)
-SELECT YEAR(date),COUNT(account_id) as acc_cnt FROM account GROUP BY YEAR(date);
+SELECT 
+    YEAR(date),
+    COUNT(account_id) as acc_cnt 
+    FROM account 
+    GROUP BY YEAR(date);
 
 -- List all clients with their birth year extracted from birth_number
-select client_id,year(dateofbirth) from client;
+SELECT 
+    client_id,
+    YEAR(dateofbirth) 
+    FROM client;
 
 -- Join client + disposition + account: list every client with their account_id and role (OWNER vs DISPONENT)
 SELECT c.client_id,a.account_id,a.date,d.type 
@@ -28,4 +48,13 @@ SELECT
     FROM disp 
     GROUP BY type;
 
+-- Find accounts that have both an OWNER and a DISPONENT (shared accounts)
+/*SELECT 
+    distinct d1.account_id 
+    FROM disp d1 inner join disp d2 on d1.account_id=d2.account_id 
+    where d1.type!=d2.type;*/
+SELECT account_id
+	FROM disp
+    GROUP BY account_id
+    HAVING COUNT(type)=2;
 -- 
