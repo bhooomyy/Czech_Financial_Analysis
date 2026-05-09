@@ -19,3 +19,13 @@ FROM client c
 INNER JOIN disp d ON c.client_id=d.client_id
 INNER JOIN account a ON a.account_id=d.account_id
 ORDER BY c.client_id;
+
+-- How many clients are OWNER vs DISPONENT? Show percentage split
+-- select count(*) from disp;
+SELECT 
+    CONCAT(ROUND(COUNT(client_id)*100.0/(SELECT COUNT(*) FROM disp),2),'%') AS client_cnt_by_disptype,
+    type 
+    FROM disp 
+    GROUP BY type;
+
+-- 
