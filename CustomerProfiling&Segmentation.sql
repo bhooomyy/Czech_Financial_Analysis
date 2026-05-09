@@ -108,4 +108,23 @@ SELECT
     GROUP BY district_id
     ORDER BY SUM(gender='F')/COUNT(*) DESC
     LIMIT 1;
--- 
+
+-- Using RANK(), rank districts by number of clients. Show top 10 and bottom 10 in one query using UNION ALL
+WITH TOP10 as (SELECT
+	district_id,
+    COUNT(*) as client_cnt,
+    RANK() OVER(ORDER BY COUNT(*) DESC) AS rnk
+    FROM client
+    GROUP BY district_id
+    LIMIT 10),
+    BOTTOM10 AS (
+    SELECT
+	district_id,
+    COUNT(*) as client_cnt,
+    RANK() OVER(ORDER BY COUNT(*) ASC) AS rnk
+    FROM client
+    GROUP BY district_id
+    LIMIT 10)
+    SELECT * FROM TOP10
+    UNION ALL
+    SELECT * FROM BOTTOM10;
