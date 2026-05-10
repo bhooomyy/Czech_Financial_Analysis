@@ -11,3 +11,11 @@ SELECT
 	FROM trans,total_transactions
 	GROUP BY type
     ORDER BY total_amount DESC;
+
+-- What are all distinct operation types? How many transactions per operation?
+SELECT 
+	operation,
+    COUNT(trans_id) AS total_trans_by_operation
+    FROM trans
+    GROUP BY operation
+    ORDER BY total_trans_by_operation;
