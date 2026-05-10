@@ -1,0 +1,13 @@
+-- -- Total transaction volume (count + sum of amount) by transaction type (PRIJEM=credit, VYDAJ=debit)
+WITH total_transactions AS(
+	SELECT 
+    COUNT(DISTINCT trans_id) AS tot_trans
+    FROM trans)
+SELECT 
+	type,
+	COUNT(DISTINCT trans_id) AS total_transactions,
+    ROUND(SUM(amount),2) as total_amount,
+    CONCAT(ROUND(COUNT(trans_id)*100.0/total_transactions.tot_trans,2),'%')
+	FROM trans,total_transactions
+	GROUP BY type
+    ORDER BY total_amount DESC;
