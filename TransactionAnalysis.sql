@@ -19,3 +19,19 @@ SELECT
     FROM trans
     GROUP BY operation
     ORDER BY total_trans_by_operation;
+
+-- What is the average, min, max transaction amount overall and per type?
+SELECT
+	'OVERALL' AS type,
+    ROUND(AVG(amount),2) AS avg_amt,
+	MIN(amount) AS min_amt,
+	MAX(amount) AS max_amt
+	FROM trans
+UNION ALL
+SELECT
+	type,
+	ROUND(AVG(amount),2) AS avg_amt_by_type,
+    MIN(amount) AS min_amt_by_type,
+    MAX(amount) AS max_amt_by_type
+	FROM trans
+    GROUP BY type;
