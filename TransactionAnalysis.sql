@@ -87,3 +87,11 @@ SELECT
 	FROM trans
     GROUP BY account_id,YEAR(date)
     HAVING debit_trans>credit_trans;
+
+-- What is the distribution of transaction amounts? Use CASE to bucket: <500, 500-2000, 2000-10000, 10000+
+SELECT 
+    SUM(amount < 6000) AS below_avg,
+    SUM(amount BETWEEN 6000 AND 30000) AS Middle,
+    SUM(amount BETWEEN 30000 AND 75000) AS Higher,
+    SUM(amount > 75000) AS Premium
+FROM trans;
