@@ -47,3 +47,17 @@ SELECT
 	COUNT(distinct trans_id) as total_trans_per_month
 	FROM trans
     GROUP BY MONTH(date);
+
+-- Which accounts have the highest total outflow (VYDAJ)? Show top 20 with account district
+SELECT
+	t.account_id,
+    a.district_id,
+    d.district_name,
+    COUNT(DISTINCT t.trans_id) AS total_trans,
+    ROUND(SUM(t.amount),2) AS total_outflow
+	FROM trans t JOIN account a ON t.account_id=a.account_id
+    JOIN district d ON d.district_id=a.district_id
+    WHERE t.type='VYDAJ'
+    GROUP BY t.account_id,a.district_id,d.district_name
+    ORDER BY total_outflow DESC
+    LIMIT 20;
