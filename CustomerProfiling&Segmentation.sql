@@ -165,4 +165,52 @@ SELECT
     WHERE d.type='OWNER'
     GROUP BY client_id
     ORDER BY value_rnk ASC;
+
+-- Using NTILE(4), segment clients into quartiles by their account balance (latest balance from trans). Label each quartile
+WITH latest_balance AS(
+	SELECT 
+    account_id,
+    balance,
+    ROW_NUMBER() OVER(PARTITION BY account_id ORDER BY date DESC) AS rn
+    FROM trans),
+	filtered AS(
+    SELECT 
+    account_id,
+    balance
+    FROM latest_balance
+    WHERE rn=1
+    ),
+    segment AS(
+    SELECT 
+    account_id,
+    balance,
+    NTILE(4) OVER(ORDER BY balance ASC) as quartile
+    FROM filtered)
+    SELECT
+    account_id,
+    balance,
+    quartile,
+    CASE quartile
+    WHEN 1 THEN "BRONZE"
+    WHEN 2 THEN "SILVER"
+    WHEN 3 THEN "GOLDEN"
+    WHEN 4 THEN "PLATINUM"
+    END as segmen_name
+    FROM segment
+    ORDER BY quartile;
+
+-- Find the top 5% of clients by total inflow (PRIJEM transactions). Use PERCENT_RANK() or NTILE
+WITH ranked AS(
+	SELECT 
+		d.client_id,
+		ROUND(SUM(amount),2) as total_inflow,
+		ROUND(PERCENT_RANK() OVER(ORDER BY SUM(amount) ASC),2) as rnk
+		FROM trans t INNER JOIN disp d ON d.account_id=t.account_id
+		WHERE t.type='PRIJEM'
+		GROUP by d.client_id)
+SELECT * 
+	FROM ranked 	
+    WHERE rnk>=0.95
+    ORDER BY total_inflow DESC;
+
 -- 
