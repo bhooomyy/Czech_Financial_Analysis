@@ -35,3 +35,15 @@ SELECT
     MAX(amount) AS max_amt_by_type
 	FROM trans
     GROUP BY type;
+
+-- Count transactions per year and per month (extract from YYMMDD date)
+SELECT
+	YEAR(date),
+	COUNT(distinct trans_id) as total_trans_per_year
+	FROM trans
+    GROUP BY YEAR(date);
+SELECT
+	MONTH(date),
+	COUNT(distinct trans_id) as total_trans_per_month
+	FROM trans
+    GROUP BY MONTH(date);
