@@ -61,3 +61,19 @@ SELECT
     GROUP BY t.account_id,a.district_id,d.district_name
     ORDER BY total_outflow DESC
     LIMIT 20;
+
+-- Calculate net cash flow (inflow - outflow) per account per year. Which accounts went negative in any year?
+WITH temp AS(
+	SELECT
+	account_id,
+    YEAR(date) as per_year,
+    ROUND(SUM(CASE WHEN type='PRIJEM' THEN amount ELSE -amount END),2) AS net_cash_flow
+	FROM trans
+    GROUP BY account_id,YEAR(date))
+SELECT 
+    account_id,
+    per_year,
+    net_cash_flow
+    FROM temp
+    WHERE net_cash_flow<0
+    ORDER BY net_cash_flow ASC;
