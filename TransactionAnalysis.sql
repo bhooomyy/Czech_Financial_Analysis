@@ -95,3 +95,15 @@ SELECT
     SUM(amount BETWEEN 30000 AND 75000) AS Higher,
     SUM(amount > 75000) AS Premium
 FROM trans;
+
+-- Find the most common k_symbol (transaction purpose) for outgoing transactions per district
+SELECT * FROM (SELECT
+	COALESCE(NULLIF(t.k_symbol, ''), 'No Symbol') as k_symbol,
+    a.district_id,
+    COUNT(*) as k_symbol_cnt,
+    RANK() OVER(PARTITION BY a.district_id ORDER BY COUNT(*) DESC) AS rnk
+	FROM trans t JOIN account a ON t.account_id=a.account_id
+    WHERE t.type='VYDAJ'
+    GROUP BY t.k_symbol,a.district_id)ranked 
+    WHERE rnk=1
+    ORDER BY district_id;
