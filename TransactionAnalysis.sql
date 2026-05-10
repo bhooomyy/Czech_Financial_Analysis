@@ -77,3 +77,13 @@ SELECT
     FROM temp
     WHERE net_cash_flow<0
     ORDER BY net_cash_flow ASC;
+
+-- Find accounts where the number of debit transactions exceeds credit transactions in any single year
+SELECT 
+	account_id,
+    YEAR(date),
+    SUM(CASE WHEN type='PRIJEM' THEN 1 ELSE 0 END) AS credit_trans,
+    SUM(CASE WHEN type='VYDAJ' THEN 1 ELSE 0 END) AS debit_trans
+	FROM trans
+    GROUP BY account_id,YEAR(date)
+    HAVING debit_trans>credit_trans;
