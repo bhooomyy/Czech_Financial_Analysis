@@ -213,4 +213,60 @@ SELECT *
     WHERE rnk>=0.95
     ORDER BY total_inflow DESC;
 
--- 
+ /*Build a full customer 360 view — for each OWNER client: age, gender, district name, account count, total lifetime inflow, 
+total outflow, net balance, loan status (if any), card type (if any). Use 5+ CTEs, 4+ JOINs, CASE for decoding, and window RANK to score each client overall.*/
+WITH client_info AS(SELECT 
+	client_id,
+	TIMESTAMPDIFF(YEAR,c.dateofbirth,CURDATE()) AS age, 
+    c.gender,
+    dist.district_name
+	FROM client c INNER JOIN district dist on dist.district_id=c.district_id),
+owner_acc AS(
+	SELECT 
+    client_id,
+    account_id
+    FROM disp
+    WHERE type='OWNER'),
+account_summary AS(
+    SELECT 
+    o.client_id,
+    COUNT(distinct o.account_id) as account_cnt,
+    ROUND(SUM(CASE WHEN type='PRIJEM' THEN t.amount ELSE 0 END),2) as total_inflow,
+    ROUND(SUM(CASE WHEN type='VYDAJ' THEN t.amount ELSE 0 END),2) as total_outflow,
+    ROUND(SUM(CASE WHEN type='VYDAJ' THEN -t.amount ELSE t.amount END),2) as net_balance
+    FROM owner_acc o JOIN trans t ON t.account_id=o.account_id
+    GROUP BY o.client_id),
+loan_summary AS(
+	SELECT
+    o.client_id,
+    l.amount as loan_amount,
+    CASE l.status
+    WHEN 'A' THEN 'Finished - No problem'
+    WHEN 'B' THEN 'Finished - Not paid'
+    WHEN 'C' THEN 'Running - OK'
+    WHEN 'D' THEN 'Running - In debt'
+    ELSE 'Not loan'
+    END AS loan_status
+    FROM owner_acc o LEFT JOIN loan l ON o.account_id=l.account_id),
+card_info AS(
+	SELECT 
+    o.client_id,
+    COALESCE(c.type,'No Card') AS card_type
+    FROM owner_acc o LEFT JOIN card c on o.client_id=c.disp_id)
+SELECT 
+	ci.age,
+    ci.gender,
+    ci.district_name,
+    acs.account_cnt,
+    acs.total_inflow,
+    acs.total_outflow,
+    acs.net_balance,
+    COALESCE(ls.loan_amount,0) as loan_amount,
+    COALESCE(ls.loan_status,'No Loan') as loan_status,
+    ROUND((RANK() OVER(ORDER BY acs.total_inflow DESC) + RANK() OVER (ORDER BY acs.total_outflow DESC) + RANK() OVER(ORDER BY acs.net_balance DESC))/3.0,2) as rnk,
+    cai.card_type
+	FROM client_info ci JOIN account_summary acs ON ci.client_id=acs.client_id
+    LEFT JOIN loan_summary ls ON ls.client_id=ci.client_id
+    LEFT JOIN card_info cai on cai.client_id=ci.client_id
+    ORDER BY rnk
+    LIMIT 20;
