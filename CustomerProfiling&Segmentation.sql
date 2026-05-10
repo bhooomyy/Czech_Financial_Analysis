@@ -151,4 +151,18 @@ SELECT
     CONCAT(ROUND(second_half_client_cnt*100.0/(SELECT COUNT(*) FROM account),2),'%') as second_half_client_percentage
     FROM first_half f join second_half s ON f.district_id=s.district_id
     ORDER BY f.district_id;
+
+-- Build a client lifetime value proxy: for each OWNER client, sum their total transaction amount across all accounts using a CTE chain
+SELECT 
+	client_id,
+    ROUND(SUM(amount),2) AS total_amount,
+    COUNT(trans_id) AS total_transactions,
+    MIN(date) AS first_transaction,
+    MAX(date) AS last_transaction,
+    DATEDIFF(MAX(date),MIN(date)) AS active_days,
+    RANK() OVER(ORDER BY SUM(amount) DESC) AS value_rnk
+    FROM disp d INNER JOIN trans t ON d.account_id=t.account_id
+    WHERE d.type='OWNER'
+    GROUP BY client_id
+    ORDER BY value_rnk ASC;
 -- 
