@@ -107,3 +107,15 @@ SELECT * FROM (SELECT
     GROUP BY t.k_symbol,a.district_id)ranked 
     WHERE rnk=1
     ORDER BY district_id;
+
+-- Identify accounts that received wire transfers from external banks (bank column NOT NULL). How many unique source banks?
+SELECT
+	account_id,
+    COUNT(trans_id) as wire_transfer_cnt,
+    ROUND(SUM(amount),2) as total_received,
+    COUNT(DISTINCT bank) as unique_src_bank,
+    GROUP_CONCAT(DISTINCT bank ORDER BY bank) AS src_bank
+    FROM trans
+    WHERE bank!='' AND type='PRIJEM'
+    GROUP BY account_id
+    ORDER BY wire_transfer_cnt DESC;
