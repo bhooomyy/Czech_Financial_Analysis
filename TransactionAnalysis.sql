@@ -119,3 +119,14 @@ SELECT
     WHERE bank!='' AND type='PRIJEM'
     GROUP BY account_id
     ORDER BY wire_transfer_cnt DESC;
+
+-- Using LAG(), calculate day-over-day balance change for each account. Flag days where balance dropped more than 20%
+WITH flag_check  AS(SELECT 
+		account_id,
+        date,
+        balance,
+        LAG(balance) OVER(PARTITION BY account_id ORDER BY date) AS prev_balance 
+        FROM trans)
+        SELECT * 
+        FROM flag_check 
+        WHERE prev_balance IS NOT NULL AND balance < prev_balance*0.8;
