@@ -130,3 +130,10 @@ WITH flag_check  AS(SELECT
         SELECT * 
         FROM flag_check 
         WHERE prev_balance IS NOT NULL AND balance < prev_balance*0.8;
+
+-- Build a running total of balance per account ordered by date using SUM() OVER (PARTITION BY account_id ORDER BY date)
+SELECT account_id,
+	date,
+    balance,
+    SUM(balance) OVER(PARTITION BY account_id ORDER BY date) AS running_total
+    FROM trans;
