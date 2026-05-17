@@ -137,3 +137,22 @@ SELECT account_id,
     balance,
     SUM(balance) OVER(PARTITION BY account_id ORDER BY date) AS running_total
     FROM trans;
+
+-- Using LEAD(), find accounts where a large debit (>10000) is immediately followed by another large debit within 7 days
+WITH subQuery AS(SELECT 
+	account_id,
+    date,
+    balance,
+    LEAD(balance) OVER(PARTITION BY account_id ORDER BY date) AS next_amt,
+    LEAD(date) OVER(PARTITION BY account_id ORDER BY date) AS next_date
+    FROM trans
+    WHERE type='VYDAJ' AND balance>10000)
+SELECT 
+    account_id,
+    date,
+    next_date,
+    balance,
+    next_amt,
+    DATEDIFF(next_date,date) AS days_between 
+    FROM subQuery 
+    WHERE DATEDIFF(next_date,date)<=7;
