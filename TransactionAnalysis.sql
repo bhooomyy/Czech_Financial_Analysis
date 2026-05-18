@@ -245,3 +245,21 @@ SELECT
          WHEN t.amount>s.avg_amt THEN "ABOVE AVG" END AS threshold
     FROM trans t JOIN subQuery s ON t.account_id=s.account_id
     ORDER BY t.account_id ASC;
+
+-- Find accounts whose balance NEVER fell below 1000 throughout their entire history (correlated subquery in WHERE)
+-- approach 1 corelated subquery
+SELECT 
+	t1.account_id 
+    FROM trans t1 
+    WHERE account_id NOT IN (SELECT 
+								account_id 
+                                FROM trans t2 
+                                WHERE t1.account_id=t2.account_id AND balance<1000);
+
+-- approach 2 having clause
+SELECT 
+	account_id,
+    MIN(balance) AS min_balance
+    FROM trans t1
+    GROUP BY account_id
+    HAVING MIN(balance)>=1000;
