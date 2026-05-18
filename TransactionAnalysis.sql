@@ -156,3 +156,21 @@ SELECT
     DATEDIFF(next_date,date) AS days_between 
     FROM subQuery 
     WHERE DATEDIFF(next_date,date)<=7;
+
+-- Calculate month-over-month transaction volume growth rate per account using LAG(monthly_sum) in a CTE
+WITH subQuery AS(
+	SELECT 
+    account_id,
+    YEAR(date) AS year,
+	MONTH(date) AS month,
+    SUM(amount) as monthly_sum
+    FROM trans
+    GROUP BY account_id,YEAR(date),MONTH(date))
+SELECT
+	account_id,
+    year,
+	month,
+    monthly_sum,
+	LAG(monthly_sum) OVER(PARTITION BY account_id ORDER BY year,month) AS prev_month_amt,
+    ROUND(monthly_sum-LAG(monthly_sum) OVER(PARTITION BY account_id ORDER BY year,month),2) AS growth_rate
+	FROM subQuery;
