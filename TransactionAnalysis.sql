@@ -194,3 +194,21 @@ SELECT
     WHERE type='VYDAJ' 
     GROUP BY MONTH(date)
     ORDER BY rnk;
+
+-- Find each account's single largest transaction and what % of their total annual spend it represented (window + subquery combo)
+WITH subQuery AS(SELECT
+	account_id,
+    amount,
+    YEAR(date) AS year,
+    SUM(amount) OVER(PARTITION BY account_id) AS annual_spend,
+    RANK() OVER(PARTITION BY account_id) AS rnk 
+	FROM trans
+    WHERE type='VYDAJ')
+SELECT
+	account_id,
+    amount,
+    year,
+    CONCAT(ROUND((amount*100/annual_spend),2),'%') AS percent_annual_spend
+    FROM subQuery
+    WHERE rnk=1
+    ORDER BY account_id,year;
