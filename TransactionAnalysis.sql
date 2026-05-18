@@ -212,3 +212,36 @@ SELECT
     FROM subQuery
     WHERE rnk=1
     ORDER BY account_id,year;
+
+-- Using a correlated subquery: for each transaction, show how it compares to that account's average transaction amount (above/below/how much)
+-- approach 1 (correlated subquery - slow and more comparisions)
+-- Also, huge dataset... Frequently lose MYSQL connection and unable to load!!!
+SELECT 
+	account_id,
+    amount,
+    ROUND((SELECT AVG(amount) FROM trans t2 WHERE t1.account_id=t2.account_id),2) AS AVG_amt,
+    ROUND((amount-(SELECT AVG(amount) FROM trans t2 WHERE t1.account_id=t2.account_id)),2) AS difference,
+    CASE WHEN amount<ROUND((SELECT AVG(amount) FROM trans t2 WHERE t1.account_id=t2.account_id),2) THEN "BELOW AVG"
+		 WHEN amount=ROUND((SELECT AVG(amount) FROM trans t2 WHERE t1.account_id=t2.account_id),2) THEN "AVG AMOUNT"
+         WHEN amount>ROUND((SELECT AVG(amount) FROM trans t2 WHERE t1.account_id=t2.account_id),2) THEN "ABOVE AVG"
+    END AS comparision
+    FROM trans t1
+    ORDER BY account_id ASC;
+
+-- approach 2 (CTE - faster and less comparisions)
+WITH subQuery AS(
+	SELECT 
+    account_id,
+    AVG(amount) AS avg_amt
+    FROM trans
+    GROUP BY account_id)
+SELECT
+	t.account_id,
+    t.amount,
+    ROUND(s.avg_amt,2),
+    ROUND((t.amount-s.avg_amt),2) AS differance,
+    CASE WHEN t.amount<s.avg_amt THEN "BELOW AVG"
+		 WHEN t.amount=s.avg_amt THEN "AVG AMOUNT"
+         WHEN t.amount>s.avg_amt THEN "ABOVE AVG" END AS threshold
+    FROM trans t JOIN subQuery s ON t.account_id=s.account_id
+    ORDER BY t.account_id ASC;
