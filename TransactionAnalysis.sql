@@ -184,3 +184,13 @@ SELECT
     ROUND(AVG(amount) OVER(PARTITION BY account_id ORDER BY YEAR(date),MONTH(date) ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),2) AS rolling_3month_avg
 	FROM trans
     GROUP BY YEAR(date),MONTH(date),account_id;
+
+-- advIdentify seasonal patterns: which months consistently have highest spending across ALL accounts? Use RANK() on aggregated monthly averages
+SELECT 
+	MONTH(date) AS month,
+    ROUND(AVG(amount),2) AS avg_spending,
+    RANK() OVER(ORDER BY AVG(amount) DESC) as rnk
+	FROM trans
+    WHERE type='VYDAJ' 
+    GROUP BY MONTH(date)
+    ORDER BY rnk;
