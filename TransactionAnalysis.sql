@@ -174,3 +174,13 @@ SELECT
 	LAG(monthly_sum) OVER(PARTITION BY account_id ORDER BY year,month) AS prev_month_amt,
     ROUND(monthly_sum-LAG(monthly_sum) OVER(PARTITION BY account_id ORDER BY year,month),2) AS growth_rate
 	FROM subQuery;
+
+-- Find the rolling 3-month average transaction amount per account using AVG() OVER with ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+SELECT
+	account_id,
+    YEAR(date) AS year,
+    MONTH(date) AS month,
+    amount,
+    ROUND(AVG(amount) OVER(PARTITION BY account_id ORDER BY YEAR(date),MONTH(date) ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),2) AS rolling_3month_avg
+	FROM trans
+    GROUP BY YEAR(date),MONTH(date),account_id;
