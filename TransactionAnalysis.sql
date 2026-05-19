@@ -263,3 +263,39 @@ SELECT
     FROM trans t1
     GROUP BY account_id
     HAVING MIN(balance)>=1000;
+
+
+-- Identify 'salary deposit' patterns — accounts receiving a large credit on the same day±2 of each month consistently for 6+ months
+WITH large_amt AS(
+-- find large credit transaction
+SELECT
+	account_id,
+    amount,
+    date,
+    MONTH(date) AS month,
+    YEAR(date) AS year,
+    DAY(date) AS day
+	FROM trans
+    WHERE type='PRIJEM' AND amount>(SELECT AVG(amount) FROM trans WHERE type='PRIJEM')),
+    -- find most common day per account & accounts where same day repeats 6+ months
+consistent_Acc AS(
+    SELECT 
+    account_id,
+    DAY(date) AS credit_day,
+    COUNT(*) AS month_cnt
+    FROM large_amt
+    GROUP BY account_id,DAY(date)
+    HAVING COUNT(*)>=6)
+    -- Verify ±2 days tolerance
+SELECT 
+    l.account_id,
+    c.credit_day,
+    COUNT(DISTINCT CONCAT(l.year, l.month)) AS months_received,
+    ROUND(AVG(l.amount), 2) AS avg_salary_amount,
+    MIN(l.amount) AS min_salary,
+    MAX(l.amount) AS max_salary
+    FROM large_amt l JOIN consistent_Acc c on l.account_id=c.account_id
+    WHERE ABS(l.day-c.credit_day)<=2
+    GROUP BY l.account_id, c.credit_day
+	HAVING COUNT(DISTINCT CONCAT(l.year, l.month)) >= 6
+	ORDER BY months_received DESC;
