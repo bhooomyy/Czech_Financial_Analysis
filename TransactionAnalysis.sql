@@ -299,3 +299,102 @@ SELECT
     GROUP BY l.account_id, c.credit_day
 	HAVING COUNT(DISTINCT CONCAT(l.year, l.month)) >= 6
 	ORDER BY months_received DESC;
+
+/*Transaction Health Scorecard — for each account, compute: avg monthly inflow, avg monthly outflow, balance volatility (STDDEV), 
+longest streak of positive net months (using LAG + running flag), and classify accounts as 'Healthy / At-Risk / Declining' using 
+CASE. Chain 4+ CTEs.*/
+WITH monthly_flow AS (
+    -- Step 1: Monthly inflow and outflow per account
+    SELECT 
+        account_id,
+        YEAR(date) AS year,
+        MONTH(date) AS month,
+        ROUND(SUM(CASE WHEN type = 'PRIJEM' THEN amount ELSE 0 END), 2) AS inflow,
+        ROUND(SUM(CASE WHEN type = 'VYDAJ' THEN amount ELSE 0 END), 2) AS outflow,
+        ROUND(SUM(CASE WHEN type = 'PRIJEM' THEN amount ELSE -amount END), 2) AS net_flow
+    FROM trans
+    GROUP BY account_id, YEAR(date), MONTH(date)
+),
+volatility_calc AS (
+    -- Step 2: Avg inflow, outflow and balance volatility
+    SELECT 
+        account_id,
+        ROUND(AVG(inflow), 2) AS avg_monthly_inflow,
+        ROUND(AVG(outflow), 2) AS avg_monthly_outflow,
+        ROUND(STDDEV(net_flow), 2) AS balance_volatility
+    FROM monthly_flow
+    GROUP BY account_id
+),
+streak_calc AS (
+    -- Step 3: Flag positive net months using LAG
+    SELECT 
+        account_id,
+        year,
+        month,
+        net_flow,
+        CASE WHEN net_flow > 0 THEN 1 ELSE 0 END AS is_positive,
+        LAG(CASE WHEN net_flow > 0 THEN 1 ELSE 0 END) 
+            OVER(PARTITION BY account_id ORDER BY year, month) AS prev_positive
+    FROM monthly_flow
+),
+streak_group AS (
+    -- Step 4: Create streak groups
+    SELECT 
+        account_id,
+        year,
+        month,
+        net_flow,
+        is_positive,
+        SUM(CASE WHEN is_positive != prev_positive OR prev_positive IS NULL THEN 1 ELSE 0 END)
+            OVER(PARTITION BY account_id ORDER BY year, month) AS streak_group
+    FROM streak_calc
+),
+longest_streak AS (
+    -- Step 5: Find longest positive streak per account
+    SELECT 
+        account_id,
+        MAX(streak_length) AS longest_positive_streak
+    FROM (
+        SELECT 
+            account_id,
+            streak_group,
+            COUNT(*) AS streak_length
+        FROM streak_group
+        WHERE is_positive = 1
+        GROUP BY account_id, streak_group
+    ) streak_lengths
+    GROUP BY account_id
+),
+final_scorecard AS (
+    -- Step 6: Combine everything
+    SELECT 
+        v.account_id,
+        v.avg_monthly_inflow,
+        v.avg_monthly_outflow,
+        v.balance_volatility,
+        COALESCE(l.longest_positive_streak, 0) AS longest_positive_streak,
+        -- Classify accounts
+        CASE 
+            WHEN v.avg_monthly_inflow > v.avg_monthly_outflow 
+                AND COALESCE(l.longest_positive_streak, 0) >= 6
+                AND v.balance_volatility < 5000
+            THEN 'Healthy'
+            WHEN v.avg_monthly_inflow < v.avg_monthly_outflow 
+                AND COALESCE(l.longest_positive_streak, 0) < 3
+            THEN 'Declining'
+            ELSE 'At-Risk'
+        END AS health_status
+    FROM volatility_calc v
+    LEFT JOIN longest_streak l ON v.account_id = l.account_id
+)
+SELECT 
+    account_id,
+    avg_monthly_inflow,
+    avg_monthly_outflow,
+    balance_volatility,
+    longest_positive_streak,
+    health_status,
+    RANK() OVER(ORDER BY avg_monthly_inflow DESC) AS inflow_rank,
+    RANK() OVER(PARTITION BY health_status ORDER BY avg_monthly_inflow DESC) AS rank_within_status
+FROM final_scorecard
+ORDER BY health_status, inflow_rank;
