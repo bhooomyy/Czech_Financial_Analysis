@@ -36,3 +36,20 @@ SELECT
                             SELECT  
                             account_id 
                             FROM loan);
+
+-- Join loan → account → district: default rate by region (A3 column). Which region has highest default rate?
+SELECT
+	l.account_id,
+    a.district_id,
+    d.district_name,
+    CASE l.status WHEN 'A' THEN 'Finished-Ok'
+				  WHEN 'B' THEN 'Finished-Default'
+				  WHEN 'C' THEN 'Running-Ok'
+                  WHEN 'D' THEN 'Running-Default'
+                  END,
+	CONCAT(ROUND(COUNT(*)*100.0/SUM(COUNT(*)) OVER(PARTITION BY d.district_id),2),'%') AS default_rate,
+    COUNT(*) AS total_loan
+	FROM loan l JOIN account a ON l.account_id=a.account_id
+    JOIN district d ON a.district_id=d.district_id
+    GROUP BY l.account_id,l.status,d.district_id,d.district_name
+    ORDER BY d.district_id;
