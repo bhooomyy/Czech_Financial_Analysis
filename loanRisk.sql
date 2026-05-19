@@ -61,3 +61,34 @@ SELECT
 SELECT
 	ROUND(AVG(TIMESTAMPDIFF(MONTH,a.date,l.date)),2) AS age
     FROM account a JOIN loan l ON a.account_id=l.account_id;
+
+-- Compare average balance (from last transaction before loan date) between defaulting vs non-defaulting borrowers
+WITH last_balance AS(
+	SELECT
+    t.account_id,
+    t.balance,
+    t.date,
+    ROW_NUMBER() OVER(PARTITION BY account_id ORDER BY t.date DESC) AS rnk
+    FROM trans t JOIN loan l ON t.account_id=l.account_id
+    WHERE t.date<=l.date),
+pre_loan_balance AS(
+	SELECT 
+    account_id,
+    balance AS balance_before_loan
+    FROM last_balance
+    WHERE rnk=1),
+loan_status AS(
+	SELECT
+		account_id,
+		CASE WHEN status IN ('B','D') THEN "DEFAULT"
+		ELSE "NON-DEFAULT"
+        END as borrow_type
+		FROM loan)
+SELECT
+	ls.borrow_type,
+	COUNT(*) AS total_borrowers,
+	ROUND(AVG(plb.balance_before_loan),2) AS avg_balance
+	FROM loan_status ls JOIN pre_loan_balance plb ON ls.account_id=plb.account_id
+    JOIN last_balance lb ON plb.account_id=lb.account_id
+    GROUP BY ls.borrow_type
+    ORDER BY total_borrowers DESC;
