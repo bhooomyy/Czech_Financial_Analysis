@@ -40,15 +40,19 @@ SELECT
 -- Join loan → account → district: default rate by region (A3 column). Which region has highest default rate?
 SELECT
     d.region,
-    CASE l.status WHEN 'A' THEN 'Finished-Ok'
-				  WHEN 'B' THEN 'Finished-Default'
-				  WHEN 'C' THEN 'Running-Ok'
-                  WHEN 'D' THEN 'Running-Default'
-                  END AS status_description,
-	CONCAT(ROUND(COUNT(*)*100.0/SUM(COUNT(*)) OVER(PARTITION BY d.region),2),'%') AS default_rate,
-    COUNT(*) AS total_loan
-	FROM loan l JOIN account a ON l.account_id=a.account_id
-    JOIN district d ON a.district_id=d.district_id
-    GROUP BY l.status,d.region
-    ORDER BY d.region;
+    COUNT(*) AS total_loans,
+    SUM(CASE WHEN l.status IN ('B','D') THEN 1 ELSE 0 END) AS total_defaults,
+    CONCAT(ROUND(SUM(CASE WHEN l.status IN ('B','D') THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2), '%') AS default_rate
+    FROM loan l 
+	JOIN account a ON l.account_id = a.account_id
+	JOIN district d ON a.district_id = d.district_id
+	GROUP BY d.region;
 
+
+-- Do longer duration loans have higher default rates? Group by duration (12/24/36/48/60 months)
+SELECT
+    duration,
+    ROUND((SUM(CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END)*100.0/COUNT(*)),2) AS default_rate
+	FROM loan
+    GROUP BY duration
+    ORDER BY default_rate DESC;
