@@ -56,3 +56,8 @@ SELECT
 	FROM loan
     GROUP BY duration
     ORDER BY default_rate DESC;
+
+-- What is the average account age (months since opening) at the time the loan was taken out?
+SELECT
+	ROUND(AVG(TIMESTAMPDIFF(MONTH,a.date,l.date)),2) AS age
+    FROM account a JOIN loan l ON a.account_id=l.account_id;
