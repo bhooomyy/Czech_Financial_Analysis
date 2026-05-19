@@ -27,3 +27,12 @@ SELECT
     SUM(CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END) as default_rate,
     ROUND(SUM(CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END)*100.0/COUNT(*),2) AS default_Rate
     FROM loan;
+
+-- Which accounts have a loan? Left join account to loan to find accounts WITHOUT any loan
+SELECT 
+    account_id
+    FROM account 
+    WHERE account_id NOT IN (
+                            SELECT  
+                            account_id 
+                            FROM loan);
