@@ -92,3 +92,16 @@ SELECT
     JOIN last_balance lb ON plb.account_id=lb.account_id
     GROUP BY ls.borrow_type
     ORDER BY total_borrowers DESC;
+
+-- Do clients with a credit card have lower default rates than those without? (loan → account → disposition → card LEFT JOIN)
+-- select distinct type from card;
+SELECT
+	CASE WHEN c.type IS NULL THEN "NO CARD" ELSE "HAS CARD" END AS card_status,
+	COUNT(DISTINCT l.account_id) total_borrowers,
+    SUM((CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END)) AS total_defaults,
+    CONCAT(ROUND(SUM(CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END)*100.0/COUNT(*),2),'%') AS default_rate
+	FROM loan l LEFT JOIN account a ON l.account_id=a.account_id
+    LEFT JOIN disp d ON a.account_id=d.account_id AND d.type='OWNER'
+    LEFT JOIN card c ON d.disp_id=c.disp_id
+    GROUP BY card_status
+    ORDER BY default_rate DESC;
