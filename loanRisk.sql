@@ -10,3 +10,13 @@ SELECT
     FROM loan
     GROUP BY status
     ORDER BY status_cnt DESC;
+
+-- What is the total loan amount, avg loan amount, and avg duration by status?
+SELECT
+	status,
+	ROUND(SUM(amount),2) AS total_amt,
+    ROUND(AVG(amount),2) AS avg_loan_amt,
+    ROUND(AVG(duration),2) AS avg_duration
+    FROM loan
+    GROUP BY status
+    ORDER BY avg_duration ASC;
