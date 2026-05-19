@@ -20,3 +20,10 @@ SELECT
     FROM loan
     GROUP BY status
     ORDER BY avg_duration ASC;
+
+-- What is the overall default rate (B+D) as a percentage of all loans?
+SELECT
+	COUNT(*) AS total_loan,
+    SUM(CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END) as default_rate,
+    ROUND(SUM(CASE WHEN status IN ('B','D') THEN 1 ELSE 0 END)*100.0/COUNT(*),2) AS default_Rate
+    FROM loan;
