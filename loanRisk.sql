@@ -105,3 +105,21 @@ SELECT
     LEFT JOIN card c ON d.disp_id=c.disp_id
     GROUP BY card_status
     ORDER BY default_rate DESC;
+
+-- Find loans where the payment amount exceeds 30% of the account's average monthly inflow (stress ratio)
+WITH monthly_income AS(SELECT
+	account_id,
+	YEAR(date) as year,
+	MONTH(date) as month,
+	ROUND(SUM(amount),2) as monthly_inflow
+	FROM trans
+	WHERE type='PRIJEM'
+	GROUP BY account_id,year,month)
+SELECT 
+	l.loan_id,
+    m.account_id, 
+    l.payments as monthly_payment,
+    ROUND(AVG(monthly_inflow),2) as avg_monthly_inflow
+	FROM loan l LEFT JOIN monthly_income m ON l.account_id=m.account_id
+	WHERE l.payments>monthly_inflow*0.3
+	GROUP BY l.loan_id,m.account_id,l.payments;
