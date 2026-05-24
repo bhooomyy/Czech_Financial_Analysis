@@ -53,3 +53,25 @@ FROM trans t
 JOIN account_avg a ON t.account_id = a.account_id
 WHERE t.amount > 3 * a.historical_avg
 ORDER BY ratio DESC;
+
+-- Identify accounts that send money to an unusually high number of distinct external bank codes
+WITH bank_summary AS (
+    SELECT 
+        account_id,
+        COUNT(DISTINCT bank) AS unique_banks,
+        COUNT(trans_id) AS total_transfers,
+        ROUND(SUM(amount), 2) AS total_amount
+    FROM trans
+    WHERE bank IS NOT NULL
+    AND bank != ''
+    AND `type` = 'VYDAJ'
+    GROUP BY account_id
+)
+SELECT 
+    account_id,
+    unique_banks,
+    total_transfers,
+    total_amount
+FROM bank_summary
+WHERE unique_banks > (SELECT AVG(unique_banks) + 2 * STDDEV(unique_banks) FROM bank_summary)
+ORDER BY unique_banks DESC;
