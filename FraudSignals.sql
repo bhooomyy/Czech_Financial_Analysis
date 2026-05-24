@@ -33,3 +33,23 @@ WITH time_diff AS(SELECT
     FROM time_diff
     WHERE prev_date IS NOT NULL AND TIMESTAMPDIFF(MONTH,prev_date,trans_date)>=6
     ORDER BY month_diff DESC;
+
+-- Find transactions where amount > 3x the account's own historical average 
+WITH account_avg AS (
+    SELECT 
+        account_id,
+        ROUND(AVG(amount), 2) AS historical_avg
+    FROM trans
+    GROUP BY account_id
+)
+SELECT 
+    t.trans_id,
+    t.account_id,
+    t.`date`,
+    t.amount,
+    a.historical_avg,
+    ROUND(t.amount / a.historical_avg, 2) AS ratio
+FROM trans t
+JOIN account_avg a ON t.account_id = a.account_id
+WHERE t.amount > 3 * a.historical_avg
+ORDER BY ratio DESC;
