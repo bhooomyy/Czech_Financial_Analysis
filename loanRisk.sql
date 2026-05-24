@@ -123,3 +123,19 @@ SELECT
 	FROM loan l LEFT JOIN monthly_income m ON l.account_id=m.account_id
 	WHERE l.payments>monthly_inflow*0.3
 	GROUP BY l.loan_id,m.account_id,l.payments;
+
+-- Using RANK(), rank loans by amount within each district. Do the highest-amount loans in each district default more?
+SELECT * FROM(SELECT 
+	l.loan_id,
+    a.account_id,
+    d.district_name,
+    l.amount as loan_amt,
+    CASE l.status WHEN 'A' THEN 'Finished-OK'
+				  WHEN 'B' THEN 'Finished-Default'
+                  WHEN 'C' THEN 'Running-OK'
+                  WHEN 'D' THEN 'Running-Default'
+                  END AS status_desc,
+    RANK() OVER(PARTITION BY d.district_name ORDER BY l.amount DESC) as rnk
+	FROM loan l LEFT JOIN account a ON l.account_id=a.account_id
+    LEFT JOIN district d ON a.district_id=d.district_id)subQuery 
+    WHERE rnk=1;
