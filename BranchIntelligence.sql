@@ -106,3 +106,18 @@ SELECT
     FROM prev_yr_data
     WHERE prev_year_tot_acc IS NOT NULL
     ORDER BY growth_rnk,year;
+
+
+-- Find districts where unemployment increased from 1995→1996 AND loan defaults increased in corresponding accounts
+SELECT
+	d.district_id,
+	d.district_name,
+    unemployment_rate_95,
+    unemployment_rate_96,
+	ROUND(unemployment_rate_96-unemployment_rate_95) AS unemployment_change,
+    ROUND(SUM(CASE WHEN l.status IN ('B','D') THEN 1 ELSE 0 END)*100.0/COUNT(*),2) AS default_rate
+	FROM district d JOIN account a ON d.district_id=a.district_id 
+					JOIN loan l ON a.account_id=l.account_id
+	GROUP BY d.district_id,d.district_name,unemployment_rate_95,unemployment_rate_96
+    HAVING unemployment_rate_95<unemployment_rate_96
+    ORDER BY unemployment_change DESC;
