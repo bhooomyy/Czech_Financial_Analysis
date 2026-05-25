@@ -79,3 +79,30 @@ SELECT
     RANK() OVER(ORDER BY avg_client_age ASC) AS age_rank
 FROM scorecard
 ORDER BY client_rank;
+
+
+-- Year-over-year account opening growth rate by district — which districts are growing fastest? Use LAG on yearly counts
+WITH tot_data AS(SELECT
+	d.district_id,
+    d.district_name,
+    YEAR(a.date) as year,
+    COUNT(DISTINCT a.account_id) as tot_acc
+	FROM account a JOIN district d ON a.district_id=d.district_id
+    GROUP BY d.district_id,year,d.district_name),
+prev_yr_data AS(SELECT 
+    district_id,
+    district_name,
+    year,
+    tot_acc,
+    LAG(tot_acc) OVER(PARTITION BY district_id ORDER BY year) as prev_year_tot_acc
+    FROM tot_data)
+SELECT 
+    district_id,
+    district_name,
+    year,
+    tot_acc,
+    ROUND((tot_acc-prev_year_tot_acc)*1.0/prev_year_tot_acc,2) as growth_rate,
+    RANK() OVER(ORDER BY ROUND((tot_acc-prev_year_tot_acc)*100.0/prev_year_tot_acc,2) DESC) as growth_rnk
+    FROM prev_yr_data
+    WHERE prev_year_tot_acc IS NOT NULL
+    ORDER BY growth_rnk,year;
