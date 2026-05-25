@@ -45,3 +45,37 @@ SELECT
     dd.default_rate,
     CASE WHEN unemployment_rate_96>ms.median_sal THEN 'High_unemplyment' ELSE 'Low_unemployment' END as emp_split
     FROM dist_defaults dd CROSS JOIN median_salary ms;
+
+-- Build a district scorecard: for each district calculate total_clients, total_loan_amount, default_rate, avg_account_balance, avg_client_age. Use RANK() on each metric
+WITH scorecard AS (
+    SELECT
+        d.district_id,
+        d.district_name,
+        COUNT(DISTINCT c.client_id) AS tot_clients,
+        ROUND(SUM(l.amount), 2) AS tot_loan_amt,
+        ROUND(SUM(CASE WHEN l.status IN ('B','D') THEN 1 ELSE 0 END) * 100.0 / COUNT(DISTINCT l.loan_id), 2) AS default_rate,
+        ROUND(AVG(t.balance), 2) AS avg_acc_balance,
+        ROUND(AVG(TIMESTAMPDIFF(YEAR, c.dateofbirth, CURDATE())), 2) AS avg_client_age
+    FROM district d
+    JOIN client c ON d.district_id = c.district_id
+    JOIN disp dp ON c.client_id = dp.client_id AND dp.`type` = 'OWNER'
+    JOIN account a ON dp.account_id = a.account_id
+    JOIN loan l ON a.account_id = l.account_id
+    JOIN trans t ON a.account_id = t.account_id
+    GROUP BY d.district_id, d.district_name
+)
+SELECT
+    district_id,
+    district_name,
+    tot_clients,
+    tot_loan_amt,
+    CONCAT(default_rate, '%') AS default_rate,
+    avg_acc_balance,
+    avg_client_age,
+    RANK() OVER(ORDER BY tot_clients DESC) AS client_rank,
+    RANK() OVER(ORDER BY tot_loan_amt DESC) AS loan_rank,
+    RANK() OVER(ORDER BY default_rate ASC) AS default_rank,
+    RANK() OVER(ORDER BY avg_acc_balance DESC) AS balance_rank,
+    RANK() OVER(ORDER BY avg_client_age ASC) AS age_rank
+FROM scorecard
+ORDER BY client_rank;
