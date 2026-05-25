@@ -6,3 +6,10 @@ SELECT
     FROM card 
     GROUP BY type;
 
+-- Card issuance trend over time — how many cards were issued per year? (parse issued date)
+SELECT
+	YEAR(issued) as year,
+	COUNT(*) as num_cards
+	FROM card
+	GROUP BY year;
+

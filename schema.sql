@@ -41,6 +41,18 @@ ENCLOSED BY '"'
 LINES TERMINATED BY '\n' 
 IGNORE 1 ROWS;
 
+SET SQL_SAFE_UPDATES = 0;
+UPDATE card
+SET issued = CONCAT(
+    IF(SUBSTRING(issued, 1, 2) >= '50', '19', '20'),
+    SUBSTRING(issued, 1, 2), '-',
+    SUBSTRING(issued, 3, 2), '-',
+    SUBSTRING(issued, 5, 2),
+    ' 00:00:00'
+);
+SET SQL_SAFE_UPDATES = 1;
+
+
 CREATE TABLE account (
     account_id INT,
     district_id INT,
